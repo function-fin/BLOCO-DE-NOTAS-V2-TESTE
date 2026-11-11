@@ -1,0 +1,573 @@
+local TweenService = game:GetService("TweenService")
+local CoreGui = game:GetService("CoreGui")
+local UIS = game:GetService("UserInputService")
+local HttpService = game:GetService("HttpService")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+
+local SAVE_FILE_NAME = "BlocoNotas_SaveData_V18.json"
+local FONTE_ARCADE = Enum.Font.Arcade
+local FONTE_TEXTO = Enum.Font.GothamBold
+local FONTE_CODIGO = Enum.Font.Code
+
+-- Função Construtora
+local function Create(className, parent, properties)
+    local obj = Instance.new(className)
+    for k, v in pairs(properties) do obj[k] = v end
+    obj.Parent = parent
+    return obj
+end
+
+local ScreenGui = Create("ScreenGui", PlayerGui, {Name = "Database_Gui", ResetOnSpawn = false, IgnoreGuiInset = true})
+
+-- [SPWN] Atributos de identificação persistente
+ScreenGui:SetAttribute("SPWN_ManagedScriptID", "DatabaseScript")
+ScreenGui:SetAttribute("SPWN_ManagedScriptName", "Database Bloco Notas")
+ScreenGui:SetAttribute("SPWN_ManagedScriptCategory", "Database Bloco Notas")
+
+-- ADAPTAÇÃO AUTOMÁTICA DE ESCALA (+80% NO PC, PADRÃO NO MOBILE)
+local uiScale = Instance.new("UIScale", ScreenGui)
+local function updateUIScale()
+    if not UIS.TouchEnabled then
+        uiScale.Scale = 1.8
+    else
+        uiScale.Scale = 1.0
+    end
+end
+UIS:GetPropertyChangedSignal("TouchEnabled"):Connect(updateUIScale)
+updateUIScale()
+
+-- --- ENGINE DE PERSISTÊNCIA DE DADOS ---
+local tabelaNotas = {}
+local indiceNotaAtiva = 0
+
+local function carregarDadosLocais()
+    local sucesso, conteudo = pcall(function()
+        if readfile then return readfile(SAVE_FILE_NAME) end
+    end)
+    if sucesso and conteudo then
+        pcall(function() tabelaNotas = HttpService:JSONDecode(conteudo) end)
+    end
+    if not tabelaNotas or #tabelaNotas == 0 then
+        tabelaNotas = {}
+        indiceNotaAtiva = 0
+    else
+        indiceNotaAtiva = 1
+    end
+end
+
+local function salvarDadosLocais()
+    if writefile and #tabelaNotas > 0 then
+        pcall(function()
+            local json = HttpService:JSONEncode(tabelaNotas)
+            writefile(SAVE_FILE_NAME, json)
+        end)
+    end
+end
+
+carregarDadosLocais()
+
+-- --- QUADRO PRINCIPAL ---
+local MainFrame = Create("Frame", ScreenGui, {
+    Name = "MainFrame", 
+    AnchorPoint = Vector2.new(0.5, 0.5), 
+    Position = UDim2.new(0.5, 0, 0.5, 0), 
+    Size = UDim2.new(0, 470, 0, 320), 
+    BackgroundColor3 = Color3.fromRGB(15, 15, 18), 
+    BorderSizePixel = 0, 
+    Active = true,
+    Visible = false
+})
+Create("UICorner", MainFrame, {CornerRadius = UDim.new(0, 12)})
+Create("UIStroke", MainFrame, {Color = Color3.fromRGB(255, 255, 255), Thickness = 1.5, ApplyStrokeMode = Enum.ApplyStrokeMode.Border})
+
+-- --- SISTEMA DE ARRASTO MAIN FRAME ---
+local dragging, dragInput, dragStart, startPos
+MainFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = MainFrame.Position
+
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then dragging = false end
+        end)
+    end
+end)
+MainFrame.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
+UIS.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        local delta = input.Position - dragStart
+        MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+
+-- [SPWN] Botão flutuante renomeado para OpenToggleButton (o Manager atua nele)
+local OpenBtn = Create("ImageButton", ScreenGui, {
+    Name = "OpenToggleButton", 
+    Position = UDim2.new(0, 15, 0.45, 0), 
+    Size = UDim2.new(0, 70, 0, 70), 
+    BackgroundTransparency = 1,
+    Image = "rbxassetid://90600565818277",
+    Visible = true
+})
+
+-- Drag OpenBtn
+local dragToggle, buttonDragStart, buttonStartPos
+OpenBtn.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragToggle, buttonDragStart, buttonStartPos = true, input.Position, OpenBtn.Position
+        if OpenBtn.AnchorPoint ~= Vector2.new(0, 0) then
+            OpenBtn.AnchorPoint = Vector2.new(0, 0)
+            OpenBtn.Position = UDim2.new(0, OpenBtn.AbsolutePosition.X, 0, OpenBtn.AbsolutePosition.Y)
+        end
+    end
+end)
+UIS.InputChanged:Connect(function(input)
+    if dragToggle and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - buttonDragStart
+        OpenBtn.Position = UDim2.new(buttonStartPos.X.Scale, buttonStartPos.X.Offset + delta.X, buttonStartPos.Y.Scale, buttonStartPos.Y.Offset + delta.Y)
+    end
+end)
+UIS.InputEnded:Connect(function(input) 
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragToggle = false end 
+end)
+
+-- --- CABEÇALHO ---
+local Title = Create("TextLabel", MainFrame, {
+    Size = UDim2.new(1, -60, 0, 35), 
+    Position = UDim2.new(0, 15, 0, 8), 
+    BackgroundTransparency = 1, 
+    Text = "Database 0.0.0.0.1", 
+    TextColor3 = Color3.fromRGB(255, 255, 255), 
+    TextSize = 20, 
+    Font = FONTE_ARCADE,
+    TextXAlignment = Enum.TextXAlignment.Left, 
+    TextYAlignment = Enum.TextYAlignment.Center
+})
+
+-- Botão 'X' Superior
+local BotaoXSuperior = Create("TextButton", MainFrame, {
+    Size = UDim2.new(0, 28, 0, 28),
+    Position = UDim2.new(1, -38, 0, 10),
+    BackgroundColor3 = Color3.fromRGB(25, 25, 30),
+    Text = "X",
+    TextColor3 = Color3.fromRGB(220, 220, 220),
+    Font = FONTE_TEXTO,
+    TextSize = 13,
+    ZIndex = 5
+})
+Create("UICorner", BotaoXSuperior, {CornerRadius = UDim.new(0, 6)})
+Create("UIStroke", BotaoXSuperior, {Color = Color3.fromRGB(45, 45, 50), Thickness = 1, ApplyStrokeMode = Enum.ApplyStrokeMode.Border})
+
+-- Divisória Fina
+Create("Frame", MainFrame, {
+    Size = UDim2.new(1, -30, 0, 1),
+    Position = UDim2.new(0, 15, 0, 45),
+    BackgroundColor3 = Color3.fromRGB(35, 35, 40),
+    BorderSizePixel = 0
+})
+
+-- --- PAINEL LATERAL ESQUERDO ---
+local PainelLateral = Create("Frame", MainFrame, {
+    Size = UDim2.new(0, 125, 1, -100),
+    Position = UDim2.new(0, 15, 0, 55),
+    BackgroundTransparency = 1
+})
+
+local LabelSecoes = Create("TextLabel", PainelLateral, {
+    Size = UDim2.new(1, -25, 0, 22), 
+    Position = UDim2.new(0, 0, 0, 0),
+    BackgroundTransparency = 1,
+    Text = "SEÇÕES", 
+    TextColor3 = Color3.fromRGB(220, 220, 220),
+    TextSize = 13, 
+    Font = FONTE_ARCADE,
+    TextXAlignment = Enum.TextXAlignment.Left, 
+    TextYAlignment = Enum.TextYAlignment.Center
+})
+
+local BotaoAdicionar = Create("TextButton", PainelLateral, {
+    Size = UDim2.new(0, 22, 0, 22),
+    Position = UDim2.new(1, -22, 0, 0),
+    BackgroundColor3 = Color3.fromRGB(28, 28, 34),
+    Text = "+",
+    TextColor3 = Color3.fromRGB(255, 255, 255),
+    TextSize = 14,
+    Font = FONTE_TEXTO
+})
+Create("UICorner", BotaoAdicionar, {CornerRadius = UDim.new(0, 5)})
+Create("UIStroke", BotaoAdicionar, {Color = Color3.fromRGB(50, 50, 55), Thickness = 1, ApplyStrokeMode = Enum.ApplyStrokeMode.Border})
+
+local ListaSecoesContainer = Create("ScrollingFrame", PainelLateral, {
+    Size = UDim2.new(1, 0, 1, -28),
+    Position = UDim2.new(0, 0, 0, 28),
+    BackgroundTransparency = 1,
+    CanvasSize = UDim2.new(0, 0, 0, 0),
+    ScrollBarThickness = 0,
+    ClipsDescendants = true
+})
+Create("UIPadding", ListaSecoesContainer, {
+    PaddingTop = UDim.new(0, 2),
+    PaddingBottom = UDim.new(0, 2),
+    PaddingLeft = UDim.new(0, 2),
+    PaddingRight = UDim.new(0, 2)
+})
+local LayoutLista = Create("UIListLayout", ListaSecoesContainer, {SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 6)})
+
+-- Botão Excluir Seção
+local BotaoExcluir = Create("TextButton", MainFrame, {
+    Size = UDim2.new(0, 125, 0, 32),
+    Position = UDim2.new(0, 15, 1, -40),
+    BackgroundColor3 = Color3.fromRGB(22, 22, 26),
+    Text = "EXCLUIR SEÇÃO",
+    TextColor3 = Color3.fromRGB(220, 220, 220),
+    TextSize = 10,
+    Font = FONTE_TEXTO
+})
+Create("UICorner", BotaoExcluir, {CornerRadius = UDim.new(0, 6)})
+Create("UIStroke", BotaoExcluir, {Color = Color3.fromRGB(45, 45, 50), Thickness = 1, ApplyStrokeMode = Enum.ApplyStrokeMode.Border})
+
+-- --- ÁREA DE CONTEÚDO DIREITA ---
+local AreaEscrita = Create("Frame", MainFrame, {
+    Size = UDim2.new(1, -170, 1, -100),
+    Position = UDim2.new(0, 155, 0, 55),
+    BackgroundTransparency = 1
+})
+
+-- Título da Nota Ativa
+local InputTitulo = Create("TextBox", AreaEscrita, {
+    Size = UDim2.new(1, -10, 0, 22),
+    Position = UDim2.new(0, 0, 0, 0),
+    BackgroundTransparency = 1,
+    Text = "",
+    PlaceholderText = "TÍTULO DA NOTA",
+    TextColor3 = Color3.fromRGB(255, 255, 255),
+    PlaceholderColor3 = Color3.fromRGB(120, 120, 120),
+    Font = FONTE_TEXTO,
+    TextSize = 12,
+    TextXAlignment = Enum.TextXAlignment.Left,
+    ClearTextOnFocus = false
+})
+
+-- Container Editor
+local ContainerEditor = Create("Frame", AreaEscrita, {
+    Size = UDim2.new(1, 0, 1, -26),
+    Position = UDim2.new(0, 0, 0, 26),
+    BackgroundColor3 = Color3.fromRGB(10, 10, 12),
+    BorderSizePixel = 0
+})
+Create("UICorner", ContainerEditor, {CornerRadius = UDim.new(0, 6)})
+Create("UIStroke", ContainerEditor, {Color = Color3.fromRGB(35, 35, 40), Thickness = 1, ApplyStrokeMode = Enum.ApplyStrokeMode.Border})
+
+-- Input do Conteúdo
+local InputConteudo = Create("TextBox", ContainerEditor, {
+    Size = UDim2.new(1, -16, 1, -16),
+    Position = UDim2.new(0, 8, 0, 8),
+    BackgroundTransparency = 1,
+    Text = "",
+    PlaceholderText = "Escreva o conteúdo aqui...",
+    TextColor3 = Color3.fromRGB(220, 220, 220),
+    PlaceholderColor3 = Color3.fromRGB(100, 100, 100),
+    Font = FONTE_CODIGO,
+    TextSize = 11,
+    TextXAlignment = Enum.TextXAlignment.Left,
+    TextYAlignment = Enum.TextYAlignment.Top,
+    MultiLine = true,
+    TextWrapped = true,
+    ClearTextOnFocus = false
+})
+
+-- --- BARRA DE BOTÕES INFERIOR DIREITA ---
+-- [ATUALIZAÇÃO] Botão Close com ID específico
+local BotaoCloseCentral = Create("TextButton", MainFrame, {
+    Name = "78774633521849", -- ID solicitado
+    Size = UDim2.new(0, 100, 0, 32),
+    Position = UDim2.new(1, -195, 1, -40),
+    BackgroundColor3 = Color3.fromRGB(25, 25, 30),
+    Text = "FECHAR UI",
+    TextColor3 = Color3.fromRGB(220, 220, 220),
+    TextSize = 10,
+    Font = FONTE_TEXTO
+})
+Create("UICorner", BotaoCloseCentral, {CornerRadius = UDim.new(0, 6)})
+Create("UIStroke", BotaoCloseCentral, {Color = Color3.fromRGB(45, 45, 50), Thickness = 1, ApplyStrokeMode = Enum.ApplyStrokeMode.Border})
+
+local BotaoSalvar = Create("TextButton", MainFrame, {
+    Size = UDim2.new(0, 85, 0, 32),
+    Position = UDim2.new(1, -90, 1, -40),
+    BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+    Text = "SALVAR",
+    TextColor3 = Color3.fromRGB(15, 15, 18),
+    TextSize = 10,
+    Font = FONTE_TEXTO
+})
+Create("UICorner", BotaoSalvar, {CornerRadius = UDim.new(0, 6)})
+
+-- --- SISTEMA DE NOTIFICAÇÃO E POP-UP ---
+local NotificationFrame = Create("Frame", ScreenGui, {
+    Name = "NotificationFrame",
+    AnchorPoint = Vector2.new(1, 0),
+    Position = UDim2.new(1, 20, 0.5, -50), -- Começa fora da tela
+    Size = UDim2.new(0, 250, 0, 60),
+    BackgroundColor3 = Color3.fromRGB(20, 20, 25),
+    BorderSizePixel = 0,
+    ZIndex = 100
+})
+Create("UICorner", NotificationFrame, {CornerRadius = UDim.new(0, 8)})
+Create("UIStroke", NotificationFrame, {Color = Color3.fromRGB(255, 255, 255), Thickness = 1.5})
+local NotifyText = Create("TextLabel", NotificationFrame, {
+    Size = UDim2.new(1, -20, 1, 0),
+    Position = UDim2.new(0, 10, 0, 0),
+    BackgroundTransparency = 1,
+    Text = "",
+    TextColor3 = Color3.fromRGB(255, 255, 255),
+    Font = FONTE_TEXTO,
+    TextSize = 12,
+    TextWrapped = true
+})
+
+local function Notificar(mensagem)
+    NotifyText.Text = mensagem
+    NotificationFrame.Position = UDim2.new(1, 20, 0.5, -50)
+    TweenService:Create(NotificationFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {Position = UDim2.new(1, -270, 0.5, -50)}):Play()
+    
+    task.delay(3, function()
+        TweenService:Create(NotificationFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {Position = UDim2.new(1, 20, 0.5, -50)}):Play()
+    end)
+end
+
+-- Sistema de Pop-up de Confirmação
+local function MostrarConfirmacaoFechamento()
+    local confirmGui = Create("Frame", ScreenGui, {
+        Name = "ConfirmGui",
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        Position = UDim2.new(0.5, 0, 0.5, 0),
+        Size = UDim2.new(0, 300, 0, 120),
+        BackgroundColor3 = Color3.fromRGB(20, 20, 25),
+        BorderSizePixel = 0,
+        ZIndex = 200
+    })
+    Create("UICorner", confirmGui, {CornerRadius = UDim.new(0, 10)})
+    Create("UIStroke", confirmGui, {Color = Color3.fromRGB(255, 255, 255), Thickness = 1.5})
+    
+    Create("TextLabel", confirmGui, {
+        Size = UDim2.new(1, -20, 0, 60),
+        Position = UDim2.new(0, 10, 0, 10),
+        BackgroundTransparency = 1,
+        Text = "Deseja realmente fechar o script completamente? Certifique-se de que salvou as informações.",
+        TextColor3 = Color3.fromRGB(220, 220, 220),
+        Font = FONTE_TEXTO,
+        TextSize = 12,
+        TextWrapped = true
+    })
+    
+    local btnSim = Create("TextButton", confirmGui, {
+        Size = UDim2.new(0, 120, 0, 30),
+        Position = UDim2.new(0, 20, 1, -40),
+        BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+        Text = "SIM, FECHAR",
+        TextColor3 = Color3.fromRGB(15, 15, 18),
+        Font = FONTE_TEXTO,
+        TextSize = 10
+    })
+    Create("UICorner", btnSim, {CornerRadius = UDim.new(0, 6)})
+    
+    local btnNao = Create("TextButton", confirmGui, {
+        Size = UDim2.new(0, 120, 0, 30),
+        Position = UDim2.new(1, -140, 1, -40),
+        BackgroundColor3 = Color3.fromRGB(35, 35, 40),
+        Text = "NÃO",
+        TextColor3 = Color3.fromRGB(220, 220, 220),
+        Font = FONTE_TEXTO,
+        TextSize = 10
+    })
+    Create("UICorner", btnNao, {CornerRadius = UDim.new(0, 6)})
+    Create("UIStroke", btnNao, {Color = Color3.fromRGB(60, 60, 65), Thickness = 1})
+    
+    btnNao.MouseButton1Click:Connect(function()
+        confirmGui:Destroy()
+    end)
+    
+    btnSim.MouseButton1Click:Connect(function()
+        confirmGui:Destroy()
+        ScreenGui:Destroy()
+    end)
+end
+
+-- --- LÓGICA DE FUNCIONAMENTO ---
+
+local function atualizarCamposDeEdicao()
+    local nota = tabelaNotas[indiceNotaAtiva]
+    if nota then
+        InputTitulo.Text = nota.titulo
+        InputConteudo.Text = nota.conteudo
+        InputTitulo.Interactable = true
+        InputConteudo.Interactable = true
+    else
+        InputTitulo.Text = ""
+        InputConteudo.Text = "Crie uma nova seção clicando no botão '+'."
+        InputTitulo.Interactable = false
+        InputConteudo.Interactable = false
+    end
+end
+
+local function renderizarListaLateral()
+    for _, child in ipairs(ListaSecoesContainer:GetChildren()) do
+        if child:IsA("Frame") or child:IsA("TextButton") then child:Destroy() end
+    end
+
+    for index, nota in ipairs(tabelaNotas) do
+        local selecionado = (index == indiceNotaAtiva)
+
+        local itemWrapper = Create("Frame", ListaSecoesContainer, {
+            Name = "Wrapper_" .. index,
+            Size = UDim2.new(1, 0, 0, 34),
+            BackgroundTransparency = 1
+        })
+
+        local botaoNota = Create("TextButton", itemWrapper, {
+            Name = "Nota_" .. index,
+            AnchorPoint = Vector2.new(0.5, 0.5),
+            Position = UDim2.new(0.5, 0, 0.5, 0),
+            Size = UDim2.new(1, -4, 1, -4), 
+            BackgroundColor3 = Color3.fromRGB(28, 28, 34),
+            Text = nota.titulo,
+            TextColor3 = Color3.fromRGB(255, 255, 255),
+            Font = FONTE_TEXTO,
+            TextSize = 10,
+            TextWrapped = true
+        })
+        Create("UICorner", botaoNota, {CornerRadius = UDim.new(0, 6)})
+
+        if selecionado then
+            Create("UIStroke", botaoNota, {
+                Color = Color3.fromRGB(255, 255, 255), 
+                Thickness = 1.5,
+                ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+            })
+        end
+
+        botaoNota.MouseButton1Click:Connect(function()
+            if tabelaNotas[indiceNotaAtiva] then
+                tabelaNotas[indiceNotaAtiva].titulo = InputTitulo.Text
+                tabelaNotas[indiceNotaAtiva].conteudo = InputConteudo.Text
+            end
+            indiceNotaAtiva = index
+            renderizarListaLateral()
+            atualizarCamposDeEdicao()
+        end)
+    end
+    ListaSecoesContainer.CanvasSize = UDim2.new(0, 0, 0, LayoutLista.AbsoluteContentSize.Y + 4)
+end
+
+InputTitulo:GetPropertyChangedSignal("Text"):Connect(function()
+    if tabelaNotas[indiceNotaAtiva] then
+        tabelaNotas[indiceNotaAtiva].titulo = InputTitulo.Text
+        local wrapper = ListaSecoesContainer:FindFirstChild("Wrapper_" .. indiceNotaAtiva)
+        if wrapper then
+            local btn = wrapper:FindFirstChild("Nota_" .. indiceNotaAtiva)
+            if btn then btn.Text = InputTitulo.Text end
+        end
+    end
+end)
+
+InputConteudo:GetPropertyChangedSignal("Text"):Connect(function()
+    if tabelaNotas[indiceNotaAtiva] then
+        tabelaNotas[indiceNotaAtiva].conteudo = InputConteudo.Text
+    end
+end)
+
+BotaoAdicionar.MouseButton1Click:Connect(function()
+    table.insert(tabelaNotas, {titulo = "NOVA NOTA", conteudo = ""})
+    indiceNotaAtiva = #tabelaNotas
+    renderizarListaLateral()
+    atualizarCamposDeEdicao()
+end)
+
+BotaoExcluir.MouseButton1Click:Connect(function()
+    if #tabelaNotas > 0 and indiceNotaAtiva > 0 then
+        table.remove(tabelaNotas, indiceNotaAtiva)
+        if indiceNotaAtiva > #tabelaNotas then indiceNotaAtiva = #tabelaNotas end
+        if indiceNotaAtiva == 0 and #tabelaNotas > 0 then indiceNotaAtiva = 1 end
+        renderizarListaLateral()
+        atualizarCamposDeEdicao()
+    end
+end)
+
+local function alternarPainel()
+    MainFrame.Visible = not MainFrame.Visible
+end
+
+OpenBtn.MouseButton1Click:Connect(alternarPainel)
+
+-- [ATUALIZAÇÃO] Botão Salvar agora exibe notificação
+BotaoSalvar.MouseButton1Click:Connect(function()
+    salvarDadosLocais()
+    local categoriaAtual = "Geral"
+    if tabelaNotas[indiceNotaAtiva] and tabelaNotas[indiceNotaAtiva].titulo ~= "" then
+        categoriaAtual = tabelaNotas[indiceNotaAtiva].titulo
+    end
+    Notificar("Informações salvas na categoria: " .. categoriaAtual)
+end)
+
+-- [ATUALIZAÇÃO] Botão X Superior e Botão Close ID pedem confirmação
+BotaoXSuperior.MouseButton1Click:Connect(MostrarConfirmacaoFechamento)
+BotaoCloseCentral.MouseButton1Click:Connect(MostrarConfirmacaoFechamento)
+
+renderizarListaLateral()
+atualizarCamposDeEdicao()
+
+--------------------------------------------------
+-- [SPWN] ADAPTADOR PERSISTENTE
+--------------------------------------------------
+task.spawn(function()
+    local scriptId = "DatabaseScript"
+    local scriptConfig = {
+        Name = "Database Bloco Notas",
+        Category = "Database Bloco Notas",
+        GuiObject = ScreenGui,
+        OnDestroy = function()
+            -- [SPWN] Salva dados automaticamente antes de destruir (garante que nada se perde)
+            pcall(salvarDadosLocais)
+            -- Equivalente ao BotaoXSuperior / BotaoCloseCentral original
+            pcall(function() ScreenGui:Destroy() end)
+        end
+    }
+
+    -- Garante a persistência global na memória
+    _G.ScriptManagerQueue = _G.ScriptManagerQueue or {}
+    _G.RegisteredScriptDatabase = _G.RegisteredScriptDatabase or {}
+
+    -- [SPWN] Lê visibilidade persistida em vez de hardcoded true
+    local persistedVis = ScreenGui:GetAttribute("SPWN_ManagedVisibility")
+
+    _G.RegisteredScriptDatabase[scriptId] = {
+        Name = scriptConfig.Name,
+        Category = scriptConfig.Category,
+        GuiObject = scriptConfig.GuiObject,
+        IsVisible = (persistedVis == nil) and true or persistedVis,
+        OnDestroy = scriptConfig.OnDestroy
+    }
+
+    local exists = false
+    for _, item in ipairs(_G.ScriptManagerQueue) do
+        if item.id == scriptId then
+            exists = true
+            item.config = scriptConfig
+            break
+        end
+    end
+    if not exists then
+        table.insert(_G.ScriptManagerQueue, {id = scriptId, config = scriptConfig})
+    end
+
+    if _G.ScriptManager and type(_G.ScriptManager.RegisterScript) == "function" then
+        _G.ScriptManager.RegisterScript(scriptId, scriptConfig)
+    end
+end)
