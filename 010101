@@ -3,13 +3,13 @@ local CoreGui = game:GetService("CoreGui")
 local UIS = game:GetService("UserInputService")
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
+local LocalPlayer = Players:GetPlayers()[1] -- Correção preventiva para garantir o LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
 local SAVE_FILE_NAME = "BlocoNotas_SaveData_V18.json"
 local FONTE_ARCADE = Enum.Font.Arcade
-local FONTE_TEXTO = Enum.Font.GothamBold
-local FONTE_CODIGO = Enum.Font.Code
+local FONTE_TEXTO = Enum.Font.Arcade -- Aplicando Arcade em tudo
+local FONTE_CODIGO = Enum.Font.Code -- Exceção para a área de escrita
 
 -- Função Construtora
 local function Create(className, parent, properties)
@@ -30,9 +30,9 @@ ScreenGui:SetAttribute("SPWN_ManagedScriptCategory", "Database Bloco Notas")
 local uiScale = Instance.new("UIScale", ScreenGui)
 local function updateUIScale()
     if not UIS.TouchEnabled then
-        uiScale.Scale = 1.8 -- Aumenta 80% no PC
+        uiScale.Scale = 1.8 
     else
-        uiScale.Scale = 1.0 -- Mantém tamanho padrão no mobile
+        uiScale.Scale = 1.0 
     end
 end
 UIS:GetPropertyChangedSignal("TouchEnabled"):Connect(updateUIScale)
@@ -109,7 +109,7 @@ UIS.InputChanged:Connect(function(input)
     end
 end)
 
--- [SPWN] Botão flutuante renomeado para OpenToggleButton (o Manager atua nele)
+-- [SPWN] Botão flutuante
 local OpenBtn = Create("ImageButton", ScreenGui, {
     Name = "OpenToggleButton", 
     Position = UDim2.new(0, 15, 0.45, 0), 
@@ -153,16 +153,15 @@ local Title = Create("TextLabel", MainFrame, {
     TextYAlignment = Enum.TextYAlignment.Center
 })
 
--- Botão 'X' Superior
-local BotaoXSuperior = Create("TextButton", MainFrame, {
+-- Botão 'X' Superior (Agora com a Imagem do ID)
+local BotaoXSuperior = Create("ImageButton", MainFrame, {
     Size = UDim2.new(0, 28, 0, 28),
     Position = UDim2.new(1, -38, 0, 10),
     BackgroundColor3 = Color3.fromRGB(25, 25, 30),
-    Text = "X",
-    TextColor3 = Color3.fromRGB(220, 220, 220),
-    Font = FONTE_TEXTO,
-    TextSize = 13,
-    ZIndex = 5
+    Image = "rbxassetid://78774633521849", -- ID aplicado aqui
+    ImageColor3 = Color3.fromRGB(255, 255, 255),
+    ZIndex = 5,
+    AutoButtonColor = false
 })
 Create("UICorner", BotaoXSuperior, {CornerRadius = UDim.new(0, 6)})
 Create("UIStroke", BotaoXSuperior, {Color = Color3.fromRGB(45, 45, 50), Thickness = 1, ApplyStrokeMode = Enum.ApplyStrokeMode.Border})
@@ -201,7 +200,7 @@ local BotaoAdicionar = Create("TextButton", PainelLateral, {
     Text = "+",
     TextColor3 = Color3.fromRGB(255, 255, 255),
     TextSize = 14,
-    Font = FONTE_TEXTO
+    Font = FONTE_ARCADE
 })
 Create("UICorner", BotaoAdicionar, {CornerRadius = UDim.new(0, 5)})
 Create("UIStroke", BotaoAdicionar, {Color = Color3.fromRGB(50, 50, 55), Thickness = 1, ApplyStrokeMode = Enum.ApplyStrokeMode.Border})
@@ -230,7 +229,7 @@ local BotaoExcluir = Create("TextButton", MainFrame, {
     Text = "EXCLUIR SEÇÃO",
     TextColor3 = Color3.fromRGB(220, 220, 220),
     TextSize = 10,
-    Font = FONTE_TEXTO
+    Font = FONTE_ARCADE
 })
 Create("UICorner", BotaoExcluir, {CornerRadius = UDim.new(0, 6)})
 Create("UIStroke", BotaoExcluir, {Color = Color3.fromRGB(45, 45, 50), Thickness = 1, ApplyStrokeMode = Enum.ApplyStrokeMode.Border})
@@ -251,7 +250,7 @@ local InputTitulo = Create("TextBox", AreaEscrita, {
     PlaceholderText = "TÍTULO DA NOTA",
     TextColor3 = Color3.fromRGB(255, 255, 255),
     PlaceholderColor3 = Color3.fromRGB(120, 120, 120),
-    Font = FONTE_TEXTO,
+    Font = FONTE_ARCADE,
     TextSize = 12,
     TextXAlignment = Enum.TextXAlignment.Left,
     ClearTextOnFocus = false
@@ -267,7 +266,7 @@ local ContainerEditor = Create("Frame", AreaEscrita, {
 Create("UICorner", ContainerEditor, {CornerRadius = UDim.new(0, 6)})
 Create("UIStroke", ContainerEditor, {Color = Color3.fromRGB(35, 35, 40), Thickness = 1, ApplyStrokeMode = Enum.ApplyStrokeMode.Border})
 
--- Input do Conteúdo
+-- Input do Conteúdo (ÚNICA EXCEÇÃO: Mantém Fonte Code para leitura)
 local InputConteudo = Create("TextBox", ContainerEditor, {
     Size = UDim2.new(1, -16, 1, -16),
     Position = UDim2.new(0, 8, 0, 8),
@@ -276,7 +275,7 @@ local InputConteudo = Create("TextBox", ContainerEditor, {
     PlaceholderText = "Escreva o conteúdo aqui...",
     TextColor3 = Color3.fromRGB(220, 220, 220),
     PlaceholderColor3 = Color3.fromRGB(100, 100, 100),
-    Font = FONTE_CODIGO,
+    Font = FONTE_CODIGO, -- Exceção mantida
     TextSize = 11,
     TextXAlignment = Enum.TextXAlignment.Left,
     TextYAlignment = Enum.TextYAlignment.Top,
@@ -293,7 +292,7 @@ local BotaoCloseCentral = Create("TextButton", MainFrame, {
     Text = "FECHAR UI",
     TextColor3 = Color3.fromRGB(220, 220, 220),
     TextSize = 10,
-    Font = FONTE_TEXTO
+    Font = FONTE_ARCADE
 })
 Create("UICorner", BotaoCloseCentral, {CornerRadius = UDim.new(0, 6)})
 Create("UIStroke", BotaoCloseCentral, {Color = Color3.fromRGB(45, 45, 50), Thickness = 1, ApplyStrokeMode = Enum.ApplyStrokeMode.Border})
@@ -305,13 +304,13 @@ local BotaoSalvar = Create("TextButton", MainFrame, {
     Text = "SALVAR",
     TextColor3 = Color3.fromRGB(15, 15, 18),
     TextSize = 10,
-    Font = FONTE_TEXTO
+    Font = FONTE_ARCADE
 })
 Create("UICorner", BotaoSalvar, {CornerRadius = UDim.new(0, 6)})
 
 
 -- =========================================================
--- SISTEMA DE NOTIFICAÇÃO E CONFIRMAÇÃO (NOVO)
+-- SISTEMA DE NOTIFICAÇÃO E CONFIRMAÇÃO
 -- =========================================================
 local function mostrarNotificacao(mensagem, duracao)
     local NotifyGui = Instance.new("ScreenGui")
@@ -339,16 +338,14 @@ local function mostrarNotificacao(mensagem, duracao)
     Label.BackgroundTransparency = 1
     Label.Text = mensagem
     Label.TextColor3 = Color3.fromRGB(255, 255, 255)
-    Label.Font = FONTE_TEXTO
+    Label.Font = FONTE_ARCADE
     Label.TextSize = 12
     Label.TextWrapped = true
     Label.Parent = NotifyFrame
 
-    -- Animação de Entrada
     NotifyFrame.Position = UDim2.new(0.5, -150, -0.1, 0)
     TweenService:Create(NotifyFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {Position = UDim2.new(0.5, -150, 0.1, 0)}):Play()
 
-    -- Animação de Saída
     task.delay(duracao or 3, function()
         local tweenOut = TweenService:Create(NotifyFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {Position = UDim2.new(0.5, -150, -0.1, 0)})
         tweenOut:Play()
@@ -365,14 +362,7 @@ local function confirmarFechamentoScript()
     ConfirmGui.DisplayOrder = 1000
     ConfirmGui.Parent = CoreGui
 
-    -- Fundo escuro (Bloqueio de fundo)
-    local Background = Instance.new("TextButton")
-    Background.Size = UDim2.new(1, 0, 1, 0)
-    Background.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    Background.BackgroundTransparency = 0.5
-    Background.Text = ""
-    Background.AutoButtonColor = false
-    Background.Parent = ConfirmGui
+    -- REMOVIDO: O fundo preto (Background) foi retirado daqui.
 
     -- Frame de Confirmação
     local ConfirmFrame = Instance.new("Frame")
@@ -394,19 +384,19 @@ local function confirmarFechamentoScript()
     MsgLabel.BackgroundTransparency = 1
     MsgLabel.Text = "Deseja realmente fechar o script completamente?\n\nCertifique-se de que salvou as informações."
     MsgLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    MsgLabel.Font = FONTE_TEXTO
+    MsgLabel.Font = FONTE_ARCADE
     MsgLabel.TextSize = 14
     MsgLabel.TextWrapped = true
     MsgLabel.Parent = ConfirmFrame
 
-    -- Botão Sim
+    -- Botão Sim (Cor alterada para cinza padrão)
     local BtnSim = Instance.new("TextButton")
     BtnSim.Size = UDim2.new(0, 130, 0, 35)
     BtnSim.Position = UDim2.new(0, 20, 1, -50)
-    BtnSim.BackgroundColor3 = Color3.fromRGB(200, 50, 50) -- Vermelho para fechar
+    BtnSim.BackgroundColor3 = Color3.fromRGB(40, 40, 45) -- Mesma cor do Cancelar
     BtnSim.Text = "SIM, FECHAR"
     BtnSim.TextColor3 = Color3.fromRGB(255, 255, 255)
-    BtnSim.Font = FONTE_TEXTO
+    BtnSim.Font = FONTE_ARCADE
     BtnSim.TextSize = 12
     BtnSim.Parent = ConfirmFrame
     Instance.new("UICorner", BtnSim).CornerRadius = UDim.new(0, 6)
@@ -418,7 +408,7 @@ local function confirmarFechamentoScript()
     BtnNao.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
     BtnNao.Text = "CANCELAR"
     BtnNao.TextColor3 = Color3.fromRGB(220, 220, 220)
-    BtnNao.Font = FONTE_TEXTO
+    BtnNao.Font = FONTE_ARCADE
     BtnNao.TextSize = 12
     BtnNao.Parent = ConfirmFrame
     Instance.new("UICorner", BtnNao).CornerRadius = UDim.new(0, 6)
@@ -430,14 +420,13 @@ local function confirmarFechamentoScript()
 
     BtnSim.MouseButton1Click:Connect(function()
         ConfirmGui:Destroy()
-        -- Executa a função de destruição real
         if _G.RegisteredScriptDatabase and _G.RegisteredScriptDatabase["DatabaseScript"] then
             local scriptData = _G.RegisteredScriptDatabase["DatabaseScript"]
             if scriptData.OnDestroy then
                 scriptData.OnDestroy()
             end
         else
-            ScreenGui:Destroy() -- Fallback
+            ScreenGui:Destroy() 
         end
     end)
 end
@@ -482,7 +471,7 @@ local function renderizarListaLateral()
             BackgroundColor3 = Color3.fromRGB(28, 28, 34),
             Text = nota.titulo,
             TextColor3 = Color3.fromRGB(255, 255, 255),
-            Font = FONTE_TEXTO,
+            Font = FONTE_ARCADE,
             TextSize = 10,
             TextWrapped = true
         })
@@ -549,7 +538,7 @@ end
 
 
 -- =========================================================
--- CONEXÕES DOS BOTÕES (ATUALIZADAS)
+-- CONEXÕES DOS BOTÕES
 -- =========================================================
 
 -- Botão Salvar com Notificação
@@ -586,19 +575,15 @@ task.spawn(function()
         Category = "Database Bloco Notas",
         GuiObject = ScreenGui,
         OnDestroy = function()
-            -- [SPWN] Salva dados automaticamente antes de destruir
             pcall(salvarDadosLocais)
-            -- Destrói a interface real
             pcall(function() ScreenGui:Destroy() end)
             
-            -- Limpa o registro para permitir recarregar
             if _G.RegisteredScriptDatabase then
                 _G.RegisteredScriptDatabase[scriptId] = nil
             end
         end
     }
 
-    -- Garante a persistência global na memória
     _G.ScriptManagerQueue = _G.ScriptManagerQueue or {}
     _G.RegisteredScriptDatabase = _G.RegisteredScriptDatabase or {}
 
