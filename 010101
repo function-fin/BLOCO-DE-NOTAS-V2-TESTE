@@ -141,16 +141,32 @@ UIS.InputEnded:Connect(function(input)
 end)
 
 -- --- CABEÇALHO ---
+-- Ocultamos o título original para evitar que o Executor injete texto (ex: "segundos")
 local Title = Create("TextLabel", MainFrame, {
     Size = UDim2.new(1, -60, 0, 35), 
     Position = UDim2.new(0, 15, 0, 8), 
     BackgroundTransparency = 1, 
-    Text = "PROJECT SPAWNSYLAS Notes", -- Título corrigido
+    Text = "", -- Texto original vazio
+    Visible = false, -- Invisível
     TextColor3 = Color3.fromRGB(255, 255, 255), 
     TextSize = 20, 
     Font = FONTE_ARCADE,
     TextXAlignment = Enum.TextXAlignment.Left, 
     TextYAlignment = Enum.TextYAlignment.Center
+})
+
+-- Criamos um título falso por cima, que o executor não consegue modificar
+local FakeTitle = Create("TextLabel", MainFrame, {
+    Size = UDim2.new(1, -60, 0, 35), 
+    Position = UDim2.new(0, 15, 0, 8), 
+    BackgroundTransparency = 1, 
+    Text = "PROJECT SPAWNSYLAS Notes", -- O texto correto
+    TextColor3 = Color3.fromRGB(255, 255, 255), 
+    TextSize = 20, 
+    Font = FONTE_ARCADE,
+    TextXAlignment = Enum.TextXAlignment.Left, 
+    TextYAlignment = Enum.TextYAlignment.Center,
+    ZIndex = 2 -- Fica na frente
 })
 
 -- Botão 'X' Superior (Com a Imagem do ID)
