@@ -3,13 +3,13 @@ local CoreGui = game:GetService("CoreGui")
 local UIS = game:GetService("UserInputService")
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
-local LocalPlayer = Players:GetPlayers()[1] -- Correção preventiva para garantir o LocalPlayer
+local LocalPlayer = Players:GetPlayers()[1] 
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
 local SAVE_FILE_NAME = "BlocoNotas_SaveData_V18.json"
 local FONTE_ARCADE = Enum.Font.Arcade
-local FONTE_TEXTO = Enum.Font.Arcade -- Aplicando Arcade em tudo
-local FONTE_CODIGO = Enum.Font.Code -- Exceção para a área de escrita
+local FONTE_TEXTO = Enum.Font.Arcade 
+local FONTE_CODIGO = Enum.Font.Code 
 
 -- Função Construtora
 local function Create(className, parent, properties)
@@ -23,8 +23,8 @@ local ScreenGui = Create("ScreenGui", PlayerGui, {Name = "Database_Gui", ResetOn
 
 -- [SPWN] Atributos de identificação persistente
 ScreenGui:SetAttribute("SPWN_ManagedScriptID", "DatabaseScript")
-ScreenGui:SetAttribute("SPWN_ManagedScriptName", "Database Bloco Notas")
-ScreenGui:SetAttribute("SPWN_ManagedScriptCategory", "Database Bloco Notas")
+ScreenGui:SetAttribute("SPWN_ManagedScriptName", "PROJECT SPAWNSILAS Notes") -- Atualizado
+ScreenGui:SetAttribute("SPWN_ManagedScriptCategory", "PROJECT SPAWNSILAS Notes") -- Atualizado
 
 -- ADAPTAÇÃO AUTOMÁTICA DE ESCALA (+80% NO PC, PADRÃO NO MOBILE)
 local uiScale = Instance.new("UIScale", ScreenGui)
@@ -145,7 +145,7 @@ local Title = Create("TextLabel", MainFrame, {
     Size = UDim2.new(1, -60, 0, 35), 
     Position = UDim2.new(0, 15, 0, 8), 
     BackgroundTransparency = 1, 
-    Text = "Database 0.0.0.0.1", 
+    Text = "PROJECT SPAWNSILAS Notes", -- Título atualizado
     TextColor3 = Color3.fromRGB(255, 255, 255), 
     TextSize = 20, 
     Font = FONTE_ARCADE,
@@ -153,12 +153,12 @@ local Title = Create("TextLabel", MainFrame, {
     TextYAlignment = Enum.TextYAlignment.Center
 })
 
--- Botão 'X' Superior (Agora com a Imagem do ID)
+-- Botão 'X' Superior (Com a Imagem do ID)
 local BotaoXSuperior = Create("ImageButton", MainFrame, {
     Size = UDim2.new(0, 28, 0, 28),
     Position = UDim2.new(1, -38, 0, 10),
     BackgroundColor3 = Color3.fromRGB(25, 25, 30),
-    Image = "rbxassetid://78774633521849", -- ID aplicado aqui
+    Image = "rbxassetid://78774633521849", 
     ImageColor3 = Color3.fromRGB(255, 255, 255),
     ZIndex = 5,
     AutoButtonColor = false
@@ -275,7 +275,7 @@ local InputConteudo = Create("TextBox", ContainerEditor, {
     PlaceholderText = "Escreva o conteúdo aqui...",
     TextColor3 = Color3.fromRGB(220, 220, 220),
     PlaceholderColor3 = Color3.fromRGB(100, 100, 100),
-    Font = FONTE_CODIGO, -- Exceção mantida
+    Font = FONTE_CODIGO, 
     TextSize = 11,
     TextXAlignment = Enum.TextXAlignment.Left,
     TextYAlignment = Enum.TextYAlignment.Top,
@@ -362,8 +362,6 @@ local function confirmarFechamentoScript()
     ConfirmGui.DisplayOrder = 1000
     ConfirmGui.Parent = CoreGui
 
-    -- REMOVIDO: O fundo preto (Background) foi retirado daqui.
-
     -- Frame de Confirmação
     local ConfirmFrame = Instance.new("Frame")
     ConfirmFrame.Size = UDim2.new(0, 320, 0, 160)
@@ -389,11 +387,11 @@ local function confirmarFechamentoScript()
     MsgLabel.TextWrapped = true
     MsgLabel.Parent = ConfirmFrame
 
-    -- Botão Sim (Cor alterada para cinza padrão)
+    -- Botão Sim
     local BtnSim = Instance.new("TextButton")
     BtnSim.Size = UDim2.new(0, 130, 0, 35)
     BtnSim.Position = UDim2.new(0, 20, 1, -50)
-    BtnSim.BackgroundColor3 = Color3.fromRGB(40, 40, 45) -- Mesma cor do Cancelar
+    BtnSim.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
     BtnSim.Text = "SIM, FECHAR"
     BtnSim.TextColor3 = Color3.fromRGB(255, 255, 255)
     BtnSim.Font = FONTE_ARCADE
@@ -571,8 +569,8 @@ atualizarCamposDeEdicao()
 task.spawn(function()
     local scriptId = "DatabaseScript"
     local scriptConfig = {
-        Name = "Database Bloco Notas",
-        Category = "Database Bloco Notas",
+        Name = "PROJECT SPAWNSILAS Notes", -- Atualizado aqui também
+        Category = "PROJECT SPAWNSILAS Notes", -- Atualizado aqui também
         GuiObject = ScreenGui,
         OnDestroy = function()
             pcall(salvarDadosLocais)
