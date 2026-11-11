@@ -23,8 +23,8 @@ local ScreenGui = Create("ScreenGui", PlayerGui, {Name = "Database_Gui", ResetOn
 
 -- [SPWN] Atributos de identificação persistente
 ScreenGui:SetAttribute("SPWN_ManagedScriptID", "DatabaseScript")
-ScreenGui:SetAttribute("SPWN_ManagedScriptName", "PROJECT SPAWNSYLAS Notes") 
-ScreenGui:SetAttribute("SPWN_ManagedScriptCategory", "PROJECT SPAWNSYLAS Notes") 
+ScreenGui:SetAttribute("SPWN_ManagedScriptName", "SPAWNSYLAS") 
+ScreenGui:SetAttribute("SPWN_ManagedScriptCategory", "SPAWNSYLAS") 
 
 -- ADAPTAÇÃO AUTOMÁTICA DE ESCALA (+80% NO PC, PADRÃO NO MOBILE)
 local uiScale = Instance.new("UIScale", ScreenGui)
@@ -141,13 +141,13 @@ UIS.InputEnded:Connect(function(input)
 end)
 
 -- --- CABEÇALHO ---
--- Ocultamos o título original para evitar que o Executor injete texto (ex: "segundos")
+-- Ocultamos o título original para evitar que o Executor injete texto
 local Title = Create("TextLabel", MainFrame, {
     Size = UDim2.new(1, -60, 0, 35), 
     Position = UDim2.new(0, 15, 0, 8), 
     BackgroundTransparency = 1, 
-    Text = "", -- Texto original vazio
-    Visible = false, -- Invisível
+    Text = "", 
+    Visible = false, 
     TextColor3 = Color3.fromRGB(255, 255, 255), 
     TextSize = 20, 
     Font = FONTE_ARCADE,
@@ -155,18 +155,18 @@ local Title = Create("TextLabel", MainFrame, {
     TextYAlignment = Enum.TextYAlignment.Center
 })
 
--- Criamos um título falso por cima, que o executor não consegue modificar
+-- Título falso por cima, intocável pelo executor
 local FakeTitle = Create("TextLabel", MainFrame, {
     Size = UDim2.new(1, -60, 0, 35), 
     Position = UDim2.new(0, 15, 0, 8), 
     BackgroundTransparency = 1, 
-    Text = "PROJECT SPAWNSYLAS Notes", -- O texto correto
+    Text = "SPAWNSYLAS", -- Título simplificado
     TextColor3 = Color3.fromRGB(255, 255, 255), 
     TextSize = 20, 
     Font = FONTE_ARCADE,
     TextXAlignment = Enum.TextXAlignment.Left, 
     TextYAlignment = Enum.TextYAlignment.Center,
-    ZIndex = 2 -- Fica na frente
+    ZIndex = 2 
 })
 
 -- Botão 'X' Superior (Com a Imagem do ID)
@@ -585,8 +585,8 @@ atualizarCamposDeEdicao()
 task.spawn(function()
     local scriptId = "DatabaseScript"
     local scriptConfig = {
-        Name = "PROJECT SPAWNSYLAS Notes", 
-        Category = "PROJECT SPAWNSYLAS Notes", 
+        Name = "SPAWNSYLAS", 
+        Category = "SPAWNSYLAS", 
         GuiObject = ScreenGui,
         OnDestroy = function()
             pcall(salvarDadosLocais)
